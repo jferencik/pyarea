@@ -2,6 +2,7 @@ import ctypes as C
 import logging
 import os
 import typing
+import sys
 from pyarea.utils import yyyddd_hhmmss2datetime
 
 _, n = os.path.split(os.path.abspath(__file__))
@@ -272,18 +273,17 @@ class area_directory(C.Structure):
 
     def __new__(cls, dir_bytes=None):
 
-        endianness_test_value = struct.unpack('>i', dir_bytes[4:8])[0]
+        file_is_big_endian = struct.unpack('>i', dir_bytes[4:8])[0] == 4
+        sys_byte_order = sys.byteorder
 
-        if endianness_test_value == 4:
+        if file_is_big_endian:
             sup_cls = C.BigEndianStructure
             cls.byte_order = '>'
+            cls = type(cls.__name__, (sup_cls, area_directory), {'_pack_': cls._pack_, '_fields_': cls._fields_})
+            inst = cls.from_buffer_copy(dir_bytes)
         else:
-            sup_cls = C.LittleEndianStructure
             cls.byte_order = '<'
-        cls = type(cls.__name__, (sup_cls, area_directory),{'_pack_': cls._pack_, '_fields_': cls._fields_})
-
-        inst = cls.from_buffer_copy(dir_bytes)
-
+            inst = area_directory.from_buffer_copy(dir_bytes)
         return inst
 
     def __eq__(self, other):
@@ -295,7 +295,6 @@ class area_directory(C.Structure):
         return C.string_at(C.byref(self), C.sizeof(self))
 
     def __repr__(self):
-        #return pformat(tuple( (e[0], getattr(self, e[0])) for e in self._fields_ ))
         return self.__str__()
 
     def __str__(self):
