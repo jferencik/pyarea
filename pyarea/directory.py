@@ -268,34 +268,50 @@ class area_directory(C.Structure):
         self.comment_cards = list() if self.comment_count > 0 else None
 
 
-
-
-
     def __new__(cls, dir_bytes=None):
 
-        file_is_big_endian = struct.unpack('>i', dir_bytes[4:8])[0] == 4
-        sys_byte_order = sys.byteorder
-
-        if sys_byte_order == 'little':
-            if file_is_big_endian:
-                sup_cls = C.BigEndianStructure
-                cls.byte_order = '>'
-                cls = type(cls.__name__, (sup_cls, area_directory), {'_pack_': cls._pack_, '_fields_': cls._fields_})
-                inst = cls.from_buffer_copy(dir_bytes)
-            else:
-                cls.byte_order = '<'
-                inst = area_directory.from_buffer_copy(dir_bytes)
+        endianness_test_value = struct.unpack('>i', dir_bytes[4:8])[0]
+        if endianness_test_value == 4:
+            sup_cls = C.BigEndianStructure
+            cls.byte_order = '>'
         else:
-            if file_is_big_endian:
-                cls.byte_order = '>'
-                inst = area_directory.from_buffer_copy(dir_bytes)
-            else:
-                sup_cls = C.LittleEndianStructure
-                cls.byte_order = '<'
-                cls = type(cls.__name__, (sup_cls, area_directory), {'_pack_': cls._pack_, '_fields_': cls._fields_})
-                inst = cls.from_buffer_copy(dir_bytes)
+            sup_cls = C.LittleEndianStructure
+            cls.byte_order = '<'
+        cls.__bases__ = tuple([sup_cls])
+
+        #cls = type(cls.__name__, (sup_cls, area_directory),{'_pack_': cls._pack_, '_fields_': cls._fields_})
+
+        inst = cls.from_buffer_copy(dir_bytes)
 
         return inst
+
+
+    # def __new__(cls, dir_bytes=None):
+    #
+    #     file_is_big_endian = struct.unpack('>i', dir_bytes[4:8])[0] == 4
+    #     sys_byte_order = sys.byteorder
+    #     if sys_byte_order == 'little':
+    #         if file_is_big_endian:
+    #             sup_cls = C.BigEndianStructure
+    #             cls.byte_order = '>'
+    #             cls = type(cls.__name__, (sup_cls, area_directory), {'_pack_': cls._pack_, '_fields_': cls._fields_})
+    #             inst = cls.from_buffer_copy(dir_bytes)
+    #         else:
+    #             cls.byte_order = '<'
+    #             inst = area_directory.from_buffer_copy(dir_bytes)
+    #     else:
+    #         if file_is_big_endian:
+    #             cls.byte_order = '>'
+    #             inst = area_directory.from_buffer_copy(dir_bytes)
+    #         else:
+    #             sup_cls = C.LittleEndianStructure
+    #             cls.byte_order = '<'
+    #             cls = type(cls.__name__, (sup_cls, area_directory), {'_pack_': cls._pack_, '_fields_': cls._fields_})
+    #             inst = cls.from_buffer_copy(dir_bytes)
+    #
+    #     return inst
+
+
 
     def __eq__(self, other):
         return self.nominalTime == other.nominalTime and self.imgbox == other.imgbox and self.byte_depth == other.byte_depth
