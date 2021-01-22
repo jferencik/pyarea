@@ -80,7 +80,7 @@ HEADER_FIELDS = (
 )
 
 
-class area_directory(C.Structure):
+class area_directory(C.BigEndianStructure):
     _pack_ = 1
     _fields_ = HEADER_FIELDS
 
